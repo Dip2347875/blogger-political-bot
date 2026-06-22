@@ -47,7 +47,7 @@ def generate_blog_content(category):
     already_published = get_published_topics()
     exclude_prompt = f" Do NOT write about these exact recent topics: {', '.join(already_published)}" if already_published else ""
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=){GEMINI_API_KEY}"
     
     prompt = f"""
     Act as an autonomous AI Political Journalist. Scan the current internet environment for a real-time viral/trending political news story today (Year 2026). 
@@ -129,12 +129,12 @@ def main():
         subject = f"[{category}] Automated Political Update - {int(time.time())}"
         html_body = raw_content
 
+    # ফিক্সড: স্ট্রিং রিপ্লেস করার সময় ব্যাকটিক্স কোড ব্লক সঠিকভাবে রিমুভ করার ব্যবস্থা করা হয়েছে
     if html_body.startswith("```html"):
-        html_body = html_body.replace("
-```html", "", 1).rstrip("```")
+        html_body = html_body.replace("```html", "", 1).rstrip("```").strip()
     elif html_body.startswith("```"):
         html_body = html_body.replace("
-```", "", 1).rstrip("```")
+```", "", 1).rstrip("```").strip()
 
     send_email_to_blogger(subject, html_body)
     
