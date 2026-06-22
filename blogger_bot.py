@@ -20,33 +20,33 @@ def generate_viral_content(category):
         
         # জেমিনিকে ডিজাইন, সম্পূর্ণ লেখা, এসইও এবং অ্যাডসেন্স অপ্টিমাইজেশনের কড়া নির্দেশনা
         prompt = f"""
-        Act as an expert global journalist, web designer, and premium SEO specialist. 
-        Find a highly trending, viral, and high-CPC global political or news topic appropriate for the category: "{category}".
+        Act as an elite global journalist, web designer, and premium SEO specialist. 
+        Find a highly trending, viral, and high-CPC global news or political topic appropriate for the category: "{category}".
         
-        Write a detailed, premium, and 100% complete blog post in English. 
-        You must structure the output in JSON format with exactly two keys: "title" and "body".
+        Write an extensive, premium, and 100% complete blog post in English. 
+        You must structure the output strictly in JSON format with exactly two keys: "title" and "body".
         
         In the "title" key: Provide a catchy, viral, and professional English title (without any HTML tags).
         
         In the "body" key: Provide the full article using beautiful HTML styling based on these layout rules:
         1. **SEO Meta Data**: Include meta description and keywords tags at the very beginning of the body.
-        2. **Featured Image**: Insert this exact Unsplash image tag to make the post visually premium and copyright-free:
-           <img src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80" alt="{category} global trending news" style="width:100%; max-width:800px; height:auto; margin-bottom:25px; display:block; border-radius:8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        2. **Featured Image**: Insert this premium, copyright-free Unsplash image tag at the top:
+           <img src="https://images.unsplash.com/photo-1503694978374-8a2fa686963a?auto=format&fit=crop&w=800&q=80" alt="{category} global trending news" style="width:100%; max-width:800px; height:auto; margin-bottom:25px; display:block; border-radius:8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         3. **Visual Hierarchy (Typography)**: 
-           - Break down the core coverage into 4 to 5 distinct sections using informative, bold, and larger <h2> and <h3> tags for subheadings.
+           - Break down the core coverage into 5 to 6 distinct sections using bold and larger <h2> and <h3> tags for subheadings.
            - Keep the core body text in standard size, but split into short, highly readable paragraphs (maximum 2-3 sentences per <p> tag). This multi-paragraph layout looks clean and allows Google Auto Ads to embed high-paying ads smoothly.
         4. **Styling Elements**: 
            - Bold critical insights and powerful phrases using the <strong> tag to make them pop out.
            - Use beautifully formatted unordered lists (<ul> and <li>) for presenting points, statistics, or facts to maximize user dwell time.
         5. **Conclusion**: End with a strong professional conclusion and an interactive call-to-action question to increase reader interaction and comments.
         
-        The whole article must be in professional English, complete, beautifully structured, and fully finalized. Do not leave any section incomplete, and do not use placeholders like [to be continued]. Respond ONLY with the valid JSON.
+        The whole article must be in professional English, deeply researched, complete, beautifully structured, and fully finalized. Do not leave any section incomplete, and do not use placeholders. Respond ONLY with the valid JSON.
         """
         
         response = model.generate_content(prompt)
         text_response = response.text.strip()
         
-        # জেমিনি অনেক সময় ```json ``` বা ``` ফরম্যাটে রেসপন্স দেয়, সেটি ক্লিন করার লজিক
+        # জেমিনির JSON রেসপন্স ক্লিন করার লজিক
         if text_response.startswith("```json"):
             text_response = text_response[7:]
         elif text_response.startswith("```"):
@@ -62,7 +62,7 @@ def generate_viral_content(category):
         return None, None
 
 def send_email(subject_title, body_content, category):
-    # সিক্রেটস সঠিকভাবে সেট করা আছে কিনা তা চেক করা
+    # সিক্রেটস চেক করা
     if not SENDER_EMAIL or not SENDER_PASSWORD or not BLOGGER_EMAIL:
         print("Error: Missing email configuration in GitHub Secrets!")
         return False
@@ -72,14 +72,14 @@ def send_email(subject_title, body_content, category):
     msg['To'] = BLOGGER_EMAIL 
     
     # সাবজেক্ট ফরম্যাট: টাইটেল এবং শেষে [Category] 
-    # এর ফলে পোস্টটি একই সাথে 'Home' পেজে এবং নির্দিষ্ট ক্যাটাগরি বাটনে জমা হবে
+    # এটি ব্লগারকে নির্দেশ দেয় পোস্টটি হোম পেজ এবং নির্দিষ্ট ক্যাটাগরি বাটনে রাখতে।
     msg['Subject'] = f"{subject_title} [{category}]"
 
-    # HTML বডি সেট করা হচ্ছে যাতে সব ডিজাইন, ইমেজ ও এসইও ট্যাগ কাজ করে
+    # HTML বডি সেট করা হচ্ছে যাতে ডিজাইন, ইমেজ ও এসইও কাজ করে
     msg.attach(MIMEText(body_content, 'html'))
 
     try:
-        # জিমেইলের মাধ্যমে মেইল পাঠানোর সঠিক কনফিগারেশন
+        # জিমেইলের মাধ্যমে মেইল পাঠানোর কনফিগারেশন
         server = smtplib.SMTP('smtp.gmail.com', 587) 
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
@@ -92,12 +92,11 @@ def send_email(subject_title, body_content, category):
         return False
 
 def main():
-    # আপনার রিকোয়েস্ট করা ৫টি প্রফেশনাল ক্যাটাগরি যা লুপ আকারে ঘুরবে
+    # আপনার রিকোয়েস্ট করা ৫টি ক্যাটাগরি
     categories = ["Politics", "News", "Opinion", "Analysis", "Interviews"]
-
     state_file = "loop_state.txt"
 
-    # লুপ স্টেট রিড করা (যাতে প্রতিবার রান হলে নতুন ক্যাটাগরির পোস্ট হয়)
+    # লুপ স্টেট রিড করা (পরের বার রান হলে যেন নতুন ক্যাটাগরি পায়)
     if os.path.exists(state_file):
         with open(state_file, "r") as f:
             try:
@@ -113,18 +112,20 @@ def main():
     selected_category = categories[current_index]
     print(f"Targeting Category: {selected_category}")
 
-    # জেমিনি থেকে প্রফেশনাল টাইটেল এবং সুন্দর ডিজাইনের বডি জেনারেট করা হচ্ছে
+    # কনটেন্ট জেনারেট করা হচ্ছে
     title, body = generate_viral_content(selected_category)
     
     if title and body:
-        # জিমেইলের মাধ্যমে ব্লগারে সফলভাবে পোস্ট পাঠানো
+        # জিমেইলের মাধ্যমে ব্লগারে পোস্ট পাঠানো
         if send_email(title, body, selected_category):
-            # সফল হলে পরবর্তী রানের জন্য ইনডেক্স ১ বাড়িয়ে সেভ করা
+            # সফল হলে পরের রান-এর জন্য ইনডেক্স আপডেট করা
             current_index += 1
             with open(state_file, "w") as f:
                 f.write(str(current_index))
+            print("Action Completed Successfully.")
     else:
         print("Skipping execution as content generation failed.")
 
 if __name__ == "__main__":
     main()
+        
