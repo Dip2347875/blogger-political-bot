@@ -47,7 +47,7 @@ def generate_blog_content(category):
     already_published = get_published_topics()
     exclude_prompt = f" Do NOT write about these exact recent topics: {', '.join(already_published)}" if already_published else ""
 
-    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=){GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
     
     prompt = f"""
     Act as an autonomous AI Political Journalist. Scan the current internet environment for a real-time viral/trending political news story today (Year 2026). 
@@ -96,7 +96,11 @@ def generate_blog_content(category):
     response = requests.post(url, headers=headers, json=data)
     result = response.json()
     
-    generated_text = result['candidates'][0]['content']['parts'][0]['text']
+    try:
+        generated_text = result['candidates'][0]['content']['parts'][0]['text']
+    except (KeyError, IndexError):
+        generated_text = f"SUBJECT: [{category}] Automated Political Update\n<p>Content generation temporary issue. Automatic retry on next loop.</p>"
+        
     return generated_text
 
 def send_email_to_blogger(subject, html_body):
@@ -124,17 +128,22 @@ def main():
     if "SUBJECT:" in raw_content:
         parts = raw_content.split("SUBJECT:", 1)[1].split("\n", 1)
         subject = parts[0].strip()
-        html_body = parts[1].strip()
+        html_body = parts[1].strip() if len(parts) > 1 else ""
     else:
         subject = f"[{category}] Automated Political Update - {int(time.time())}"
         html_body = raw_content
 
-    # ফিক্সড: স্ট্রিং রিপ্লেস করার সময় ব্যাকটিক্স কোড ব্লক সঠিকভাবে রিমুভ করার ব্যবস্থা করা হয়েছে
+    # সুরক্ষিত স্লাইসিং মেথড (কোনো কোটেশন মার্কের ঝামেলা নেই)
+    html_body = html_body.strip()
     if html_body.startswith("```html"):
-        html_body = html_body.replace("```html", "", 1).rstrip("```").strip()
+        html_body = html_body[7:]
     elif html_body.startswith("```"):
-        html_body = html_body.replace("
-```", "", 1).rstrip("```").strip()
+        html_body = html_body[3:]
+        
+    if html_body.endswith("```"):
+        html_body = html_body[:-3]
+        
+    html_body = html_body.strip()
 
     send_email_to_blogger(subject, html_body)
     
@@ -143,3 +152,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
