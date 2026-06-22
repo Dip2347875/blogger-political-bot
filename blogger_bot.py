@@ -1,103 +1,130 @@
 import os
 import smtplib
-import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import json
+import google.generativeai as genai
 
-# Secrets (গিটহাব সিক্রেট থেকে আসবে)
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# গিটহাব সিক্রেটস (GitHub Secrets) থেকে ডেটা লোড করা হচ্ছে
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL")
 SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
-BLOGGER_EMAIL = "dipg74666.01924@blogger.com"
+BLOGGER_EMAIL = os.environ.get("BLOGGER_EMAIL") 
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-CATEGORIES = ["Politics", "News", "Opinion", "Analysis", "Interviews"]
-INDEX_FILE = "loop_state.txt"
-TITLE_HISTORY_FILE = "titles.txt"
+# জেমিনি এপিআই কনফিগারেশন
+genai.configure(api_key=GEMINI_API_KEY)
 
-def get_previous_titles():
-    if os.path.exists(TITLE_HISTORY_FILE):
-        with open(TITLE_HISTORY_FILE, "r") as f:
-            return f.read().splitlines()
-    return []
-
-def save_title(title):
-    with open(TITLE_HISTORY_FILE, "a") as f:
-        f.write(title + "\n")
-
-def generate_blog_content(category):
-    previous_titles = get_previous_titles()
-    
-    # সকল বাটন ও হোম লিংকসহ নেভিগেশন বার
-    navigation_html = f"""
-    <div style="text-align: center; margin: 50px 0; padding: 30px; border-top: 2px solid #eee; border-bottom: 2px solid #eee; background-color: #f9f9f9;">
-        <h4 style="margin-bottom: 20px;">Explore More Categories:</h4>
-        <div style="margin-bottom: 20px;">
-            <a href="/search/label/Politics">Politics</a> | <a href="/search/label/News">News</a> | 
-            <a href="/search/label/Opinion">Opinion</a> | <a href="/search/label/Analysis">Analysis</a> | 
-            <a href="/search/label/Interviews">Interviews</a>
-        </div>
-        <a href="/" style="padding: 12px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Back to Home</a>
-    </div>
-    """
-
-    # শক্তিশালী প্রম্পট: ট্রেন্ডিং টপিক ও এসইও অপ্টিমাইজড
-    prompt = f"""
-    You are an expert SEO Content Writer for a viral blog. Your category is: {category}.
-    
-    MANDATORY TASKS:
-    1. TRENDING TOPIC: Research and write about a currently trending, viral topic specifically related to {category}. Do not write generic articles.
-    2. TITLE: Start with 'TITLE: [A Viral, Click-Worthy Title]'.
-    3. META: Start with 'META: [Write a 150-character SEO meta-description]'.
-    4. IMAGE: Add <img src="https://picsum.photos/800/400?random={os.urandom(1).hex()}" alt="{category}" style="width:100%; border-radius:10px;"> at the top.
-    5. STRUCTURE: Short paragraphs (2-3 sentences max) for AdSense. Use H1, H2, H3 tags.
-    6. SEO: Bold keywords. 
-    7. FAQ: 3 unique questions and answers at the end.
-    
-    Write a 900+ word professional post.
-    """
-    
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+def generate_viral_content(category):
     try:
-        response = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]})
-        full_response = response.json()['candidates'][0]['content']['parts'][0]['text']
+        model = genai.GenerativeModel('gemini-pro')
         
-        if "TITLE:" in full_response and "META:" in full_response:
-            meta = full_response.split("META:", 1)[1].split("\n", 1)[0].strip()
-            title = full_response.split("TITLE:", 1)[1].split("\n", 1)[0].strip()
+        # জেমিনিকে ডিজাইন, সম্পূর্ণ লেখা, এসইও এবং অ্যাডসেন্স অপ্টিমাইজেশনের কড়া নির্দেশনা
+        prompt = f"""
+        Act as an expert global journalist, web designer, and premium SEO specialist. 
+        Find a highly trending, viral, and high-CPC global political or news topic appropriate for the category: "{category}".
+        
+        Write a detailed, premium, and 100% complete blog post in English. 
+        You must structure the output in JSON format with exactly two keys: "title" and "body".
+        
+        In the "title" key: Provide a catchy, viral, and professional English title (without any HTML tags).
+        
+        In the "body" key: Provide the full article using beautiful HTML styling based on these layout rules:
+        1. **SEO Meta Data**: Include meta description and keywords tags at the very beginning of the body.
+        2. **Featured Image**: Insert this exact Unsplash image tag to make the post visually premium and copyright-free:
+           <img src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80" alt="{category} global trending news" style="width:100%; max-width:800px; height:auto; margin-bottom:25px; display:block; border-radius:8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        3. **Visual Hierarchy (Typography)**: 
+           - Break down the core coverage into 4 to 5 distinct sections using informative, bold, and larger <h2> and <h3> tags for subheadings.
+           - Keep the core body text in standard size, but split into short, highly readable paragraphs (maximum 2-3 sentences per <p> tag). This multi-paragraph layout looks clean and allows Google Auto Ads to embed high-paying ads smoothly.
+        4. **Styling Elements**: 
+           - Bold critical insights and powerful phrases using the <strong> tag to make them pop out.
+           - Use beautifully formatted unordered lists (<ul> and <li>) for presenting points, statistics, or facts to maximize user dwell time.
+        5. **Conclusion**: End with a strong professional conclusion and an interactive call-to-action question to increase reader interaction and comments.
+        
+        The whole article must be in professional English, complete, beautifully structured, and fully finalized. Do not leave any section incomplete, and do not use placeholders like [to be continued]. Respond ONLY with the valid JSON.
+        """
+        
+        response = model.generate_content(prompt)
+        text_response = response.text.strip()
+        
+        # জেমিনি অনেক সময় ```json ``` বা ``` ফরম্যাটে রেসপন্স দেয়, সেটি ক্লিন করার লজিক
+        if text_response.startswith("```json"):
+            text_response = text_response[7:]
+        elif text_response.startswith("```"):
+            text_response = text_response[3:]
             
-            if title in previous_titles:
-                return None, None
+        if text_response.endswith("```"):
+            text_response = text_response[:-3]
             
-            content = full_response.split(title, 1)[1].replace("META:", "").replace(meta, "").replace("TITLE:", "").strip()
-            full_html = f'<p style="display:none;">{meta}</p>' + content + navigation_html
-            return title, full_html
+        data = json.loads(text_response.strip())
+        return data.get("title"), data.get("body")
+    except Exception as e:
+        print(f"Error generating content with Gemini: {e}")
         return None, None
-    except:
-        return None, None
+
+def send_email(subject_title, body_content, category):
+    # সিক্রেটস সঠিকভাবে সেট করা আছে কিনা তা চেক করা
+    if not SENDER_EMAIL or not SENDER_PASSWORD or not BLOGGER_EMAIL:
+        print("Error: Missing email configuration in GitHub Secrets!")
+        return False
+
+    msg = MIMEMultipart()
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = BLOGGER_EMAIL 
+    
+    # সাবজেক্ট ফরম্যাট: টাইটেল এবং শেষে [Category] 
+    # এর ফলে পোস্টটি একই সাথে 'Home' পেজে এবং নির্দিষ্ট ক্যাটাগরি বাটনে জমা হবে
+    msg['Subject'] = f"{subject_title} [{category}]"
+
+    # HTML বডি সেট করা হচ্ছে যাতে সব ডিজাইন, ইমেজ ও এসইও ট্যাগ কাজ করে
+    msg.attach(MIMEText(body_content, 'html'))
+
+    try:
+        # জিমেইলের মাধ্যমে মেইল পাঠানোর সঠিক কনফিগারেশন
+        server = smtplib.SMTP('smtp.gmail.com', 587) 
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.sendmail(SENDER_EMAIL, BLOGGER_EMAIL, msg.as_string()) 
+        server.quit()
+        print(f"Successfully published designed post to Home and [{category}]: {subject_title}")
+        return True
+    except Exception as e:
+        print(f"Failed to send email via Gmail: {e}")
+        return False
+
+def main():
+    # আপনার রিকোয়েস্ট করা ৫টি প্রফেশনাল ক্যাটাগরি যা লুপ আকারে ঘুরবে
+    categories = ["Politics", "News", "Opinion", "Analysis", "Interviews"]
+
+    state_file = "loop_state.txt"
+
+    # লুপ স্টেট রিড করা (যাতে প্রতিবার রান হলে নতুন ক্যাটাগরির পোস্ট হয়)
+    if os.path.exists(state_file):
+        with open(state_file, "r") as f:
+            try:
+                current_index = int(f.read().strip())
+            except:
+                current_index = 0
+    else:
+        current_index = 0
+
+    if current_index >= len(categories):
+        current_index = 0
+
+    selected_category = categories[current_index]
+    print(f"Targeting Category: {selected_category}")
+
+    # জেমিনি থেকে প্রফেশনাল টাইটেল এবং সুন্দর ডিজাইনের বডি জেনারেট করা হচ্ছে
+    title, body = generate_viral_content(selected_category)
+    
+    if title and body:
+        # জিমেইলের মাধ্যমে ব্লগারে সফলভাবে পোস্ট পাঠানো
+        if send_email(title, body, selected_category):
+            # সফল হলে পরবর্তী রানের জন্য ইনডেক্স ১ বাড়িয়ে সেভ করা
+            current_index += 1
+            with open(state_file, "w") as f:
+                f.write(str(current_index))
+    else:
+        print("Skipping execution as content generation failed.")
 
 if __name__ == "__main__":
-    idx = 0
-    if os.path.exists(INDEX_FILE):
-        with open(INDEX_FILE, "r") as f: 
-            val = f.read().strip()
-            if val.isdigit(): idx = int(val)
-    
-    category = CATEGORIES[idx]
-    title, content = generate_blog_content(category)
-    
-    if content:
-        msg = MIMEMultipart()
-        msg['Subject'] = title
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = BLOGGER_EMAIL
-        msg.attach(MIMEText(content, 'html'))
-        
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.sendmail(SENDER_EMAIL, BLOGGER_EMAIL, msg.as_string())
-            
-        save_title(title)
-        with open(INDEX_FILE, "w") as f: f.write(str((idx + 1) % len(CATEGORIES)))
-        print(f"Success: Posted '{title}'")
-    
+    main()
