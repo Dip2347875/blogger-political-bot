@@ -12,32 +12,43 @@ BLOGGER_EMAIL = "dipg74666.01924@blogger.com"
 
 CATEGORIES = ["Politics", "News", "Opinion", "Analysis", "Interviews"]
 INDEX_FILE = "loop_state.txt"
+TITLE_HISTORY_FILE = "titles.txt"
+
+def get_previous_titles():
+    if os.path.exists(TITLE_HISTORY_FILE):
+        with open(TITLE_HISTORY_FILE, "r") as f:
+            return f.read().splitlines()
+    return []
+
+def save_title(title):
+    with open(TITLE_HISTORY_FILE, "a") as f:
+        f.write(title + "\n")
 
 def generate_blog_content(category):
+    previous_titles = get_previous_titles()
+    
     navigation_html = f"""
-    <div style="text-align: center; margin: 40px 0; padding: 20px; border-top: 2px solid #eee;">
-        <h4 style="margin-bottom: 15px;">Explore Categories:</h4>
-        <a href="/search/label/Politics" style="margin: 5px; padding: 8px 15px; background: #f1f1f1; text-decoration: none;">Politics</a>
-        <a href="/search/label/News" style="margin: 5px; padding: 8px 15px; background: #f1f1f1; text-decoration: none;">News</a>
-        <a href="/search/label/Opinion" style="margin: 5px; padding: 8px 15px; background: #f1f1f1; text-decoration: none;">Opinion</a>
-        <a href="/search/label/Analysis" style="margin: 5px; padding: 8px 15px; background: #f1f1f1; text-decoration: none;">Analysis</a>
-        <a href="/search/label/Interviews" style="margin: 5px; padding: 8px 15px; background: #f1f1f1; text-decoration: none;">Interviews</a>
-        <br><br>
-        <a href="/" style="padding: 10px 20px; background: #333; color: white; text-decoration: none;">Back to Home</a>
+    <div style="text-align: center; margin: 50px 0; padding: 30px; border-top: 2px solid #eee; border-bottom: 2px solid #eee;">
+        <h4 style="margin-bottom: 20px;">আরও পড়ুন:</h4>
+        <div style="margin-bottom: 20px;">
+            <a href="/search/label/Politics">Politics</a> | <a href="/search/label/News">News</a> | 
+            <a href="/search/label/Opinion">Opinion</a> | <a href="/search/label/Analysis">Analysis</a> | 
+            <a href="/search/label/Interviews">Interviews</a>
+        </div>
+        <a href="/" style="padding: 12px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Home</a>
     </div>
     """
 
     prompt = f"""
-    Write a 800-word professional SEO-optimized blog post for the category: {category}.
+    Write a 900+ word professional, SEO-optimized blog post for category: {category}.
     Requirements:
-    1. TRENDING: Write about a current trending topic in {category}.
-    2. TITLE: Start with 'TITLE: [Viral Title]'. 
-    3. CONTENT: Start the article body AFTER the Title. Do not include 'TITLE:' in the body.
-    4. IMAGE: Add <img src="https://picsum.photos/800/400?random=1" alt="{category}" style="width:100%;"> at the very top.
-    5. STRUCTURE: Use H1, H2, H3 tags. Bold keywords and use bullet points.
-    6. FAQ: Include a 3-question FAQ section.
-    7. NAVIGATION: Include this at the end: {navigation_html}
-    8. LENGTH: Ensure it is at least 700 words. If not, stop.
+    1. AVOID DUPLICATES: Do not write about the same topic that has been written before. Use a fresh, unique angle.
+    2. META DESCRIPTION: Provide a 150-character SEO meta-description at the very beginning starting with 'META: '.
+    3. TITLE: Start with 'TITLE: [Unique Viral Title]'.
+    4. STRUCTURE: Use short paragraphs (3-4 sentences) for high AdSense readability.
+    5. IMAGE: Add <img src="https://picsum.photos/800/400?random={os.urandom(1).hex()}" alt="{category}" style="width:100%; border-radius:10px;">.
+    6. SEO: Use H1, H2, H3 tags. Bold main keywords.
+    7. FAQ: 3 unique questions and answers at the end.
     """
     
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
@@ -45,18 +56,20 @@ def generate_blog_content(category):
         response = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]})
         full_response = response.json()['candidates'][0]['content']['parts'][0]['text']
         
-        # টাইটেল আলাদা করা
-        if "TITLE:" in full_response:
-            title = full_response.split("TITLE:")[1].split("\n")[0].strip()
-            content = full_response.split(title)[1].replace("TITLE:", "").strip()
-        else:
-            title = f"Latest Update on {category}"
-            content = full_response
-
-        if len(content.split()) < 400: # শব্দ সংখ্যা চেক
-            return None, None
+        # ডাটা প্রসেসিং
+        if "TITLE:" in full_response and "META:" in full_response:
+            meta = full_response.split("META:", 1)[1].split("\n", 1)[0].strip()
+            title = full_response.split("TITLE:", 1)[1].split("\n", 1)[0].strip()
             
-        return title, content
+            if title in previous_titles:
+                return None, None
+            
+            content = full_response.split(title, 1)[1].replace("META:", "").replace(meta, "").replace("TITLE:", "").strip()
+            
+            # মেটা ডেসক্রিপশন ব্লগের শুরুর জন্য HTML এ যোগ করা (SEO Meta)
+            full_html = f'<p style="display:none;">{meta}</p>' + content + navigation_html
+            return title, full_html
+        return None, None
     except:
         return None, None
 
@@ -82,6 +95,7 @@ if __name__ == "__main__":
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.sendmail(SENDER_EMAIL, BLOGGER_EMAIL, msg.as_string())
             
+        save_title(title)
         with open(INDEX_FILE, "w") as f: f.write(str((idx + 1) % len(CATEGORIES)))
         print(f"Success: Posted '{title}'")
     
