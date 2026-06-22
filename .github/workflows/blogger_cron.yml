@@ -1,0 +1,40 @@
+name: Infinite Blogger Automation Bot
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # ঠিক প্রতি ৩০ মিনিট পর পর স্ক্রিপ্টটি রান হবে
+  workflow_dispatch: # ম্যানুয়ালি ক্লিক করে রান করার অপশন
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python Environment
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install Necessary Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Execute Automation Script
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+        SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+      run: python blogger_bot.py
+
+    - name: Commit and Push State to Maintain Loop and Variety
+      run: |
+        git config --global user.name "Blogger Automation Bot"
+        git config --global user.email "bot@bloggerautomation.com"
+        git add loop_state.txt published_topics.json || true
+        git commit -m "Update loop index and tracking log [skip ci]" || true
+        git push
+        
