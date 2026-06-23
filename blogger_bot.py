@@ -22,12 +22,11 @@ def generate_viral_content(category):
             generation_config={"response_mime_type": "application/json"}
         )
         
-        # জেমিনিকে ডিজাইন, সম্পূর্ণ লেখা, এসইও এবং অ্যাডসেন্স অপ্টিমাইজেশনের কড়া নির্দেশনা
         prompt = f"""
-        Act as an elite global journalist, web designer, and premium SEO specialist. 
+        Act as an elite global journalist, web designer, and premium SEO specialist. \
         Find a highly trending, viral, and high-CPC global news or political topic appropriate for the category: "{category}".
         
-        Write an extensive, premium, and 100% complete blog post in English. 
+        Write an extensive, premium, and 100% complete blog post in English. \
         You must structure the output strictly in JSON format with exactly two keys: "title" and "body".
         
         In the "title" key: Provide a catchy, viral, and professional English title (without any HTML tags).
@@ -38,19 +37,18 @@ def generate_viral_content(category):
            <img src="https://images.unsplash.com/photo-1503694978374-8a2fa686963a?auto=format&fit=crop&w=800&q=80" alt="{category} global trending news" style="width:100%; max-width:800px; height:auto; margin-bottom:25px; display:block; border-radius:8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         3. **Visual Hierarchy (Typography)**: 
            - Break down the core coverage into 5 to 6 distinct sections using bold and larger <h2> and <h3> tags for subheadings.
-           - Keep the core body text in standard size, but split into short, highly readable paragraphs (maximum 2-3 sentences per <p> tag). This multi-paragraph layout looks clean and allows Google Auto Ads to embed high-paying ads smoothly.
+           - Keep the core body text in standard size, but split into short, highly readable paragraphs (maximum 2-3 sentences per <p> tag).
         4. **Styling Elements**: 
-           - Bold critical insights and powerful phrases using the <strong> tag to make them pop out.
-           - Use beautifully formatted unordered lists (<ul> and <li>) for presenting points, statistics, or facts to maximize user dwell time.
-        5. **Conclusion**: End with a strong professional conclusion and an interactive call-to-action question to increase reader interaction and comments.
+           - Bold critical insights and powerful phrases using the <strong> tag.
+           - Use beautifully formatted unordered lists (<ul> and <li>).
+        5. **Conclusion**: End with a strong professional conclusion and an interactive call-to-action question.
         
-        The whole article must be in professional English, deeply researched, complete, beautifully structured, and fully finalized. Do not leave any section incomplete, and do not use placeholders. Respond ONLY with the valid JSON.
+        Respond ONLY with a valid JSON object containing "title" and "body". Do not wrap it in markdown code blocks.
         """
         
         response = model.generate_content(prompt)
         text_response = response.text.strip()
         
-        # জেমিনির পিওর JSON রেসপন্স লোড করা হচ্ছে
         data = json.loads(text_response)
         return data.get("title"), data.get("body")
     except Exception as e:
@@ -58,7 +56,6 @@ def generate_viral_content(category):
         return None, None
 
 def send_email(subject_title, body_content, category):
-    # সিক্রেটস চেক করা
     if not SENDER_EMAIL or not SENDER_PASSWORD or not BLOGGER_EMAIL:
         print("Error: Missing email configuration in GitHub Secrets!")
         return False
@@ -66,15 +63,10 @@ def send_email(subject_title, body_content, category):
     msg = MIMEMultipart()
     msg['From'] = SENDER_EMAIL
     msg['To'] = BLOGGER_EMAIL 
-    
-    # সাবজেক্ট ফরম্যাট: টাইটেল এবং শেষে [Category] 
     msg['Subject'] = f"{subject_title} [{category}]"
-
-    # HTML বডি সেট করা হচ্ছে যাতে ডিজাইন, ইমেজ ও এসইও কাজ করে
     msg.attach(MIMEText(body_content, 'html'))
 
     try:
-        # জিমেইলের মাধ্যমে মেইল পাঠানোর কনফিগারেশন
         server = smtplib.SMTP('smtp.gmail.com', 587) 
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
@@ -87,11 +79,9 @@ def send_email(subject_title, body_content, category):
         return False
 
 def main():
-    # ৫টি ক্যাটাগরি
     categories = ["Politics", "News", "Opinion", "Analysis", "Interviews"]
     state_file = "loop_state.txt"
 
-    # লুপ স্টেট রিড করা (পরের বার রান হলে যেন নতুন ক্যাটাগরি পায়)
     if os.path.exists(state_file):
         with open(state_file, "r") as f:
             try:
@@ -107,19 +97,15 @@ def main():
     selected_category = categories[current_index]
     print(f"Targeting Category: {selected_category}")
 
-    # কনটেন্ট জেনারেট করা হচ্ছে
     title, body = generate_viral_content(selected_category)
     
     if title and body:
-        # জিমেইলের মাধ্যমে ব্লগারে পোস্ট পাঠানো
         if send_email(title, body, selected_category):
-            # সফল হলে পরের রান-এর জন্য ইনডেক্স আপডেট করা
             current_index += 1
             with open(state_file, "w") as f:
                 f.write(str(current_index))
             print("Action Completed Successfully.")
     else:
-        # এরর হলে স্ক্রিপ্ট ক্র্যাশ করবে, যা গিটহাব অ্যাকশনে লাল ক্রস চিহ্ন দেখাবে (ধরা সহজ হবে)
         raise RuntimeError("Skipping execution as content generation failed. Check Gemini API or Response format.")
 
 if __name__ == "__main__":
