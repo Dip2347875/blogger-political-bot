@@ -16,7 +16,11 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 def generate_viral_content(category):
     try:
-        model = genai.GenerativeModel('gemini-pro')
+        # আপডেট করা মডেল (gemini-1.5-flash) এবং সরাসরি JSON আউটপুট পাওয়ার কনফিগারেশন
+        model = genai.GenerativeModel(
+            'gemini-1.5-flash',
+            generation_config={"response_mime_type": "application/json"}
+        )
         
         # জেমিনিকে ডিজাইন, সম্পূর্ণ লেখা, এসইও এবং অ্যাডসেন্স অপ্টিমাইজেশনের কড়া নির্দেশনা
         prompt = f"""
@@ -46,16 +50,8 @@ def generate_viral_content(category):
         response = model.generate_content(prompt)
         text_response = response.text.strip()
         
-        # জেমিনির JSON রেসপন্স ক্লিন করার লজিক
-        if text_response.startswith("```json"):
-            text_response = text_response[7:]
-        elif text_response.startswith("```"):
-            text_response = text_response[3:]
-            
-        if text_response.endswith("```"):
-            text_response = text_response[:-3]
-            
-        data = json.loads(text_response.strip())
+        # জেমিনির পিওর JSON রেসপন্স লোড করা হচ্ছে
+        data = json.loads(text_response)
         return data.get("title"), data.get("body")
     except Exception as e:
         print(f"Error generating content with Gemini: {e}")
@@ -72,7 +68,6 @@ def send_email(subject_title, body_content, category):
     msg['To'] = BLOGGER_EMAIL 
     
     # সাবজেক্ট ফরম্যাট: টাইটেল এবং শেষে [Category] 
-    # এটি ব্লগারকে নির্দেশ দেয় পোস্টটি হোম পেজ এবং নির্দিষ্ট ক্যাটাগরি বাটনে রাখতে।
     msg['Subject'] = f"{subject_title} [{category}]"
 
     # HTML বডি সেট করা হচ্ছে যাতে ডিজাইন, ইমেজ ও এসইও কাজ করে
@@ -92,7 +87,7 @@ def send_email(subject_title, body_content, category):
         return False
 
 def main():
-    # আপনার রিকোয়েস্ট করা ৫টি ক্যাটাগরি
+    # ৫টি ক্যাটাগরি
     categories = ["Politics", "News", "Opinion", "Analysis", "Interviews"]
     state_file = "loop_state.txt"
 
@@ -124,7 +119,8 @@ def main():
                 f.write(str(current_index))
             print("Action Completed Successfully.")
     else:
-        print("Skipping execution as content generation failed.")
+        # এরর হলে স্ক্রিপ্ট ক্র্যাশ করবে, যা গিটহাব অ্যাকশনে লাল ক্রস চিহ্ন দেখাবে (ধরা সহজ হবে)
+        raise RuntimeError("Skipping execution as content generation failed. Check Gemini API or Response format.")
 
 if __name__ == "__main__":
     main()
