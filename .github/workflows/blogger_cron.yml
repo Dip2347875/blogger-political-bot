@@ -1,34 +1,26 @@
-name: Premium Blogger Automation Bot
-
+name: Blogger Bot
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 * * * *'
-  workflow_dispatch:
-
 jobs:
-  build:
+  run:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    - name: Install Dependencies
-      run: |
-        pip install google-generativeai
-    - name: Run Script
-      env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
-        SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
-        BLOGGER_EMAIL: ${{ secrets.BLOGGER_EMAIL }}
-      run: python blogger_bot.py
-    - name: Commit State
-      run: |
-        git config user.name "Blogger Bot"
-        git config user.email "bot@blogger.com"
-        git add loop_state.txt
-        git commit -m "Update state" || echo "No changes"
-        git push
-        
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.10'}
+      - run: pip install google-generativeai
+      - env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+          BLOGGER_EMAIL: ${{ secrets.BLOGGER_EMAIL }}
+        run: python blogger_bot.py
+      - run: |
+          git config user.name "Bot"
+          git config user.email "bot@bot.com"
+          git add loop_state.txt
+          git commit -m "Update state" || echo "No changes"
+          git push
+          
