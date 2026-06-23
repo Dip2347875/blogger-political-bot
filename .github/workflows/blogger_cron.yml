@@ -2,40 +2,40 @@ name: Premium Blogger Automation Bot
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # গুগলের পলিসি মেনে ঠিক প্রতি ৩০ মিনিট পর পর পোস্ট হবে
-  workflow_dispatch: # আপনি চাইলে ম্যানুয়ালি বাটনে ক্লিক করেও রান করতে পারবেন
+    - [span_0](start_span)cron: '*/30 * * * *' # প্রতি ৩০ মিনিট পর পর স্বয়ংক্রিয়ভাবে পোস্ট হবে[span_0](end_span)
+  [span_1](start_span)workflow_dispatch: # ম্যানুয়ালি বাটনে ক্লিক করেও রান করা যাবে[span_1](end_span)
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    [span_2](start_span)runs-on: ubuntu-latest[span_2](end_span)
 
     steps:
     - name: Checkout Repository Code
-      uses: actions/checkout@v4
+      [span_3](start_span)uses: actions/checkout@v4[span_3](end_span)
 
     - name: Set up Python Environment
-      uses: actions/setup-python@v5
+      [span_4](start_span)uses: actions/setup-python@v5[span_4](end_span)
       with:
-        python-version: '3.10'
+        [span_5](start_span)python-version: '3.10'[span_5](end_span)
 
     - name: Install Necessary Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install google-generativeai
+        [span_6](start_span)pip install google-generativeai[span_6](end_span)
 
     - name: Execute Automation Script
       env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
-        SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
-        BLOGGER_EMAIL: ${{ secrets.BLOGGER_EMAIL }}
-      run: python blogger_bot.py
+        [span_7](start_span)GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}[span_7](end_span)
+        [span_8](start_span)SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}[span_8](end_span)
+        [span_9](start_span)SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}[span_9](end_span)
+        [span_10](start_span)BLOGGER_EMAIL: ${{ secrets.BLOGGER_EMAIL }}[span_10](end_span)
+      [span_11](start_span)run: python blogger_bot.py[span_11](end_span)
 
     - name: Commit and Push State to Maintain Category Loop
       run: |
-        git config --global user.name "Blogger Bot"
-        git config --global user.email "bot@blogger.com"
-        git add loop_state.txt || true
-        git commit -m "Update category loop state [skip ci]" || true
-        git push
+        [span_12](start_span)git config --global user.name "Blogger Bot"[span_12](end_span)
+        [span_13](start_span)git config --global user.email "bot@blogger.com"[span_13](end_span)
+        [span_14](start_span)git add loop_state.txt || true[span_14](end_span)
+        [span_15](start_span)git commit -m "Update category loop state [skip ci]" || true[span_15](end_span)
+        [span_16](start_span)git push[span_16](end_span)
         
