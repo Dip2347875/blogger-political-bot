@@ -3,22 +3,22 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import json
-# ২০২৬ সালের লেটেস্ট অফিসিয়াল গুগল জেমিনি লাইব্রেরি
+# লেটেস্ট গুগল জেমিনি লাইব্রেরি
 from google import genai
 from google.genai import types
 
-# গিটহাব সিক্রেটস থেকে ডেটা নেওয়া হচ্ছে
+# গিটহাব সিক্রেটস থেকে ডেটা লোড করা হচ্ছে
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL")
 SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
 BLOGGER_EMAIL = os.environ.get("BLOGGER_EMAIL") 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# নতুন নিয়মে জেমিনি ক্লায়েন্ট ইনিশিয়ালাইজেশন
+# জেমিনি ক্লায়েন্ট ইনিশিয়ালাইজেশন
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 def generate_viral_content(category):
     try:
-        # জেমিনিকে পিওর JSON আউটপুট দেওয়ার কড়া নির্দেশ
+        # জেমিনিকে পিওর JSON আউটপুট দেওয়ার নির্দেশনা
         prompt = f"""
         Act as an elite global journalist, web designer, and premium SEO specialist. 
         Find a highly trending, viral, and high-CPC global news or political topic appropriate for the category: "{category}".
@@ -43,9 +43,9 @@ def generate_viral_content(category):
         Respond ONLY with a valid JSON object containing "title" and "body". Do not wrap it in markdown code blocks.
         """
         
-        # লেটেস্ট লাইব্রেরির নিয়ম অনুযায়ী কন্টেন্ট জেনারেশন
+        # লেটেস্ট জেমিনি ২.৫ ফ্ল্যাশ মডেল ব্যবহার করা হচ্ছে
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -114,4 +114,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-        
+    
