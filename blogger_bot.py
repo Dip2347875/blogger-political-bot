@@ -9,7 +9,9 @@ from email.mime.multipart import MIMEMultipart
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 def generate_viral_content(category):
-    # এসইও এবং ভাইরাল কন্টেন্টের জন্য প্রম্পট
+    # মডেলটিকে একটু সরল করে দেওয়া হয়েছে যাতে এরর কম হয়
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
     prompt = f"""
     Act as a professional journalist and SEO expert. Write a premium blog post for the category: "{category}".
     Output MUST be in pure JSON format with two keys: "title" and "body".
@@ -23,12 +25,13 @@ def generate_viral_content(category):
     5. Bold key insights using <strong> tags.
     6. A strong conclusion and call-to-action.
     
-    Do NOT use markdown (```json). Respond with raw JSON only.
+    Respond with raw JSON only. Do not add any extra text.
     """
     
-    model = genai.GenerativeModel('gemini-1.5-flash')
     response = model.generate_content(prompt)
-    data = json.loads(response.text.strip())
+    # JSON ক্লিন করা
+    text = response.text.replace('```json', '').replace('```', '').strip()
+    data = json.loads(text)
     return data.get("title"), data.get("body")
 
 def main():
